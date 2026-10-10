@@ -1,10 +1,13 @@
 # Analizador de Eventos de Windows
 
-**Herramienta 02** de la suite de diagnóstico. Desarrollado por **Damecas**.
+Herramienta de diagnóstico para Windows, parte de una suite personal de herramientas de diagnóstico.
+Desarrollado por **Damecas**.
 
 Un solo archivo HTML, sin dependencias y **100 % sin conexión**: los registros se procesan
 íntegramente en el navegador, no se suben a ningún servidor y la página no hace ninguna
-petición de red externa. Pensado para hospedarse en Aruba ClearPass como la Cronología de Tráfico.
+petición de red externa. Se puede abrir localmente o publicar en un servidor web interno.
+
+> Proyecto personal e independiente: no está afiliado ni respaldado por ninguna organización.
 
 ## Qué hace
 
@@ -87,11 +90,11 @@ Reconstruye qué ocurrió en un equipo Windows a partir de sus registros de even
 
 ## Modo en vivo
 
-Con el agente `Vivo/captura-vivo.ps1` (solo lectura) corriendo en el equipo, el botón **En vivo**
-sigue su carpeta y actualiza todas las secciones cada pocos segundos, sin recargar y respetando
-filtros y zoom. Además de los registros, recibe **métricas** (CPU, memoria, disco, red y procesos
-que más consumen), que se muestran en «Métricas en vivo» y alimentan el diagnóstico de
-rendimiento («en uso, limitado por CPU/memoria/disco»). Instrucciones en `Vivo/README.md`.
+Con la opción **Captura en vivo** de `Diagnostico-Eventos.exe`, un agente de solo lectura corre en el
+equipo y el botón **En vivo** del analizador sigue su carpeta y actualiza todas las secciones cada
+pocos segundos, sin recargar y respetando filtros y zoom. Además de los registros, recibe
+**métricas** (CPU, memoria, disco, red y procesos que más consumen), que se muestran en «Métricas en
+vivo» y alimentan el diagnóstico de rendimiento («en uso, limitado por CPU/memoria/disco»).
 
 El agente hace las consultas pesadas en segundo plano (nunca frenan la captura), escribe menos
 cuando el equipo está en calma, comprime con gzip los días anteriores y respeta un tope de
@@ -115,20 +118,22 @@ Update, el informe WER (módulo y offset) y las DLL cargadas alimentan «Cambios
 ## Exportación — modelo común `netdiag/v1`
 
 Exporta a **JSON `netdiag/v1`** (eventos, componentes, relaciones, sesiones, incidentes,
-hallazgos, cambios y estado del equipo) y a **CSV**. Es el mismo esquema que la Cronología de Tráfico: las marcas de tiempo
-en **UTC (ISO-8601)** permiten correlacionar los registros del sistema con las capturas de red
-en el hub unificado.
+hallazgos, cambios y estado del equipo) y a **CSV**. Las marcas de tiempo en **UTC (ISO-8601)**
+permiten correlacionar los registros del sistema con otras fuentes, como capturas de red.
 
 ## Ejecutable para Windows
 
 `Diagnostico-Eventos.exe` reúne en un solo programa el Analizador, la captura en vivo y las pruebas
 del agente, con un menú y el diálogo de carpetas de Windows para elegir de dónde se toman los
-registros y dónde se guarda la captura. No se instala ni se conecta a internet. Detalle, seguridad
-y firma en `Ejecutable/LÉEME.md`.
+registros y dónde se guarda la captura. No se instala ni se conecta a internet.
+
+El ejecutable **no está firmado digitalmente**, así que Windows SmartScreen o algunos antivirus
+pueden mostrar una advertencia. Si prefieres no ejecutarlo, `eventos-windows.html` funciona por sí
+solo en el navegador.
 
 ## Uso
 
-Abre `eventos-windows.html` en Chrome o Edge (local o desde ClearPass) y arrastra los archivos, o
+Abre `eventos-windows.html` en Chrome o Edge (local o desde un servidor web interno) y arrastra los archivos, o
 pulsa **Abrir carpeta** para cargar todos los registros de una carpeta y sus subcarpetas.
 
 Para obtener registros del equipo a diagnosticar:
@@ -155,11 +160,10 @@ clase de Windows que lo obtiene), cada cuánto se captura, en qué línea del ar
 guarda en memoria, qué módulo lo interpreta y en qué sección aparece; más la cadena de compilación
 del propio desarrollo. Útil para seguirle la pista a un dato concreto o para explicar la herramienta.
 
-## Fuentes y compilación
+## Distribución
 
-El HTML se genera a partir de `fuentes/` con `node fuentes/construir.mjs`: la lógica está dividida
-en 20 módulos (`fuentes/app/NN-*.js`), cada uno con sus pruebas (`node verificacion.js --modulo
-<nombre>`). No edites el HTML a mano; cambia las fuentes y recompila. Detalle en `fuentes/LÉEME.md`.
+Este repositorio publica la versión compilada. `eventos-windows.html` es autocontenido: todo el
+código va dentro del archivo y se puede revisar directamente antes de usarlo.
 
 ## Notas técnicas
 
@@ -169,3 +173,7 @@ en 20 módulos (`fuentes/app/NN-*.js`), cada uno con sus pruebas (`node verifica
 - La severidad combina el `Level` de Windows con una base de conocimiento de IDs conocidos
   (energía, SCM, disco/NTFS, WHEA, DCOM, seguridad, Sysmon, BITS, tareas, TLS, etc.).
 - Un `.evtx` marcado como «sucio» (no cerrado limpiamente) se lee igualmente y se avisa.
+
+## Licencia
+
+Distribuido bajo la licencia MIT. Consulta el archivo [LICENSE](LICENSE).
