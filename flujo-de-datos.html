@@ -142,7 +142,7 @@ footer{margin-top:30px;padding-top:12px;border-top:1px solid var(--line);font-si
   <section class="banda">
     <div class="bh"><span class="n">E</span><h3>Tres formas de abrir los datos</h3><span class="d">Lo que cambia es quién entrega los archivos; lo que pasa después es idéntico</span></div>
     <div class="cajas">
-      <div class="c"><h4>Arrastrar o abrir archivos</h4><p>Funciona en cualquier navegador y desde ClearPass.</p><span class="api">&lt;input type="file"&gt; · arrastrar y soltar</span></div>
+      <div class="c"><h4>Arrastrar o abrir archivos</h4><p>Funciona en cualquier navegador, local o desde un servidor web interno.</p><span class="api">&lt;input type="file"&gt; · arrastrar y soltar</span></div>
       <div class="c"><h4>Abrir carpeta</h4><p>Carga todos los registros de una carpeta y sus subcarpetas, hasta cuatro niveles.</p><span class="api">showDirectoryPicker() · webkitdirectory</span></div>
       <div class="c"><h4>En vivo</h4><p>Relee solo lo que creció desde la última vez y vuelve a dibujar respetando filtros y zoom.</p><span class="api">cada 3 s · redibuja cada 4 s</span></div>
       <div class="c t4"><h4>Dentro del ejecutable</h4><p>El programa abre el diálogo de carpetas de Windows y entrega los archivos; en vivo no hay que elegir carpeta otra vez.</p><span class="api">127.0.0.1 con secreto por sesión · /api/elegir-carpeta · /api/vivo/leer</span></div>
@@ -208,7 +208,7 @@ footer{margin-top:30px;padding-top:12px;border-top:1px solid var(--line);font-si
     <div class="cajas cinco">
       <div class="c"><h4>fuentes/</h4><p>Cabecera y estilos, cuerpo de las secciones, lector .evtx y 20 módulos en <code>app/NN-*.js</code>, que se concatenan en orden.</p></div>
       <div class="c"><h4>construir.mjs</h4><p>Valida nombres y orden y escribe el archivo único.</p><span class="api">node construir.mjs [--comprobar]</span></div>
-      <div class="c"><h4>eventos-windows.html</h4><p>El artefacto que se publica en ClearPass o se abre suelto.</p></div>
+      <div class="c"><h4>eventos-windows.html</h4><p>El artefacto que se publica en un servidor web interno o se abre suelto.</p></div>
       <div class="c"><h4>Ejecutable/</h4><p>Empaqueta el HTML, el agente y sus pruebas dentro del .exe de Windows.</p><span class="api">node construir-exe.mjs</span></div>
       <div class="c"><h4>Verificación/</h4><p>420 comprobaciones sobre 14 escenarios, por módulo si hace falta, y 39 del agente.</p><span class="api">node verificacion.js [--modulo X] · pruebas-agente.ps1</span></div>
     </div>
