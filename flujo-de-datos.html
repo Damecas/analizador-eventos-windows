@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Flujo de datos · Analizador de Eventos de Windows</title>
+<style>
+:root{
+  --bg:#f4f5f7;--panel:#fff;--panel-2:#f8f9fb;--ink:#15181d;--ink-2:#4a515c;--muted:#6b7380;
+  --line:#dfe3e8;--line-2:#eceff3;--sel:#e8effb;
+  --f1:#2f6fd6;--f2:#8a4fd1;--f3:#0f8a8a;--f4:#a86700;--acc:#c93636;
+  --f1-bg:#e8effb;--f2-bg:#f1e9fb;--f3-bg:#e2f2f2;--f4-bg:#fdf0d8;
+  --f-body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-mono:ui-monospace,"Cascadia Mono",Consolas,"Liberation Mono",monospace;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#111418;--panel:#181c21;--panel-2:#1d2228;--ink:#e9ecf0;--ink-2:#b4bbc5;--muted:#8b94a1;
+  --line:#2b323a;--line-2:#232930;--sel:#1f2b3d;
+  --f1:#6ea2ff;--f2:#b78cf2;--f3:#3fc1c1;--f4:#e3a73f;--acc:#f07474;
+  --f1-bg:#16233a;--f2-bg:#271a38;--f3-bg:#10302f;--f4-bg:#352a14;
+}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.55 var(--f-body)}
+.wrap{max-width:1180px;margin:0 auto;padding:30px 20px 48px}
+.eyebrow{font-size:11.5px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);font-family:var(--f-mono)}
+h1{font-size:25px;margin:6px 0 6px;letter-spacing:-.01em}
+.lede{margin:0;color:var(--ink-2);max-width:760px}
+h2.sec{font-size:17px;margin:34px 0 14px;padding-bottom:7px;border-bottom:1px solid var(--line)}
+/* leyenda de flujos */
+.leyenda{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 6px}
+.fl{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;border:1px solid var(--line);border-radius:999px;padding:4px 12px 4px 9px;background:var(--panel)}
+.fl i{width:9px;height:9px;border-radius:50%;flex:none}
+.f1 i,.b1{background:var(--f1)} .f2 i,.b2{background:var(--f2)} .f3 i,.b3{background:var(--f3)} .f4 i,.b4{background:var(--f4)}
+.fl b{font-weight:600} .fl span{color:var(--muted);font-family:var(--f-mono);font-size:11.5px}
+/* bandas */
+.banda{border:1px solid var(--line);border-radius:14px;background:var(--panel);padding:14px 16px 16px}
+.bh{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.bh .n{font-family:var(--f-mono);font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:6px;padding:1px 7px}
+.bh h3{font-size:15px;margin:0}
+.bh .d{font-size:12.5px;color:var(--muted)}
+.cajas{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:10px}
+.cajas.cinco{grid-template-columns:repeat(auto-fit,minmax(196px,1fr))}
+.c{border:1px solid var(--line);border-top:3px solid var(--line);border-radius:10px;background:var(--panel-2);padding:9px 11px;min-width:0}
+.c.t1{border-top-color:var(--f1)} .c.t2{border-top-color:var(--f2)} .c.t3{border-top-color:var(--f3)} .c.t4{border-top-color:var(--f4)}
+.c h4{font-size:13.5px;margin:0 0 3px}
+.c p{margin:0;font-size:12px;color:var(--ink-2)}
+.c code,.mono{font-family:var(--f-mono);font-size:11.5px}
+.c .api{display:block;margin-top:5px;font-family:var(--f-mono);font-size:11px;color:var(--muted);word-break:break-word;line-height:1.5}
+.tic{font-family:var(--f-mono);font-size:10.5px;border-radius:5px;padding:1px 6px;display:inline-block;margin-top:6px;color:#fff}
+@media (prefers-color-scheme:dark){.tic{color:#0e1116}}
+/* conector */
+.fle{display:flex;flex-direction:column;align-items:center;gap:0;padding:2px 0}
+.fle .ln{width:2px;height:16px;background:var(--line)}
+.fle .et{font-family:var(--f-mono);font-size:11.5px;color:var(--muted);background:var(--bg);padding:3px 10px;border:1px solid var(--line);border-radius:999px}
+.fle .pt{width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:7px solid var(--line)}
+/* frontera */
+.frontera{display:flex;align-items:center;gap:12px;margin:14px 0 2px}
+.frontera .lbl{font-family:var(--f-mono);font-size:11.5px;color:var(--f4);white-space:nowrap}
+.frontera .ds{flex:1;border-top:2px dashed var(--f4);opacity:.75}
+/* estado S */
+.estado{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.s{border:1px solid var(--line);border-radius:9px;padding:8px 10px;background:var(--panel-2)}
+.s b{font-family:var(--f-mono);font-size:12.5px}
+.s span{display:block;font-size:11.5px;color:var(--muted)}
+.s.t1{box-shadow:inset 3px 0 0 var(--f1)} .s.t2{box-shadow:inset 3px 0 0 var(--f2)} .s.t3{box-shadow:inset 3px 0 0 var(--f3)} .s.t4{box-shadow:inset 3px 0 0 var(--f4)}
+/* tabla */
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:700;padding:9px 11px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:8px 11px;border-bottom:1px solid var(--line-2);vertical-align:top}
+tr:last-child td{border-bottom:0}
+tbody tr.t1{box-shadow:inset 3px 0 0 var(--f1)} tbody tr.t2{box-shadow:inset 3px 0 0 var(--f2)} tbody tr.t3{box-shadow:inset 3px 0 0 var(--f3)} tbody tr.t4{box-shadow:inset 3px 0 0 var(--f4)}
+td.m,th.m{font-family:var(--f-mono);font-size:11.5px;white-space:nowrap}
+td b{font-weight:600}
+.nota{font-size:12.5px;color:var(--ink-2);border:1px solid var(--line);border-left:3px solid var(--f4);border-radius:9px;padding:10px 13px;margin-top:14px;background:var(--panel-2)}
+footer{margin-top:30px;padding-top:12px;border-top:1px solid var(--line);font-size:12px;color:var(--muted);display:flex;gap:16px;flex-wrap:wrap;justify-content:space-between}
+@media print{body{background:#fff}.banda,.tw,.c,.s{break-inside:avoid}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">Diagnóstico de red · Herramienta 02 · Documentación</div>
+  <h1>Flujo de datos, de la fuente a la conclusión</h1>
+  <p class="lede">De dónde sale cada dato, cómo llega al Analizador, dónde se guarda, quién lo interpreta y en qué sección aparece. Cada flujo mantiene su color de principio a fin para poder seguirlo.</p>
+
+  <div class="leyenda">
+    <span class="fl f1"><i></i><b>Eventos</b><span>registros de Windows</span></span>
+    <span class="fl f2"><i></i><b>Recursos</b><span>métricas y procesos</span></span>
+    <span class="fl f3"><i></i><b>Consultas del sistema</b><span>sondas</span></span>
+    <span class="fl f4"><i></i><b>Inventario y agente</b><span>contexto del equipo</span></span>
+  </div>
+
+  <h2 class="sec">1 · Captura en vivo</h2>
+
+  <section class="banda">
+    <div class="bh"><span class="n">A</span><h3>Origen · el equipo Windows</h3><span class="d">Todo se consulta en modo solo lectura, con lo que ya trae Windows</span></div>
+    <div class="cajas cinco">
+      <div class="c t1"><h4>Registros de eventos</h4><p>14 canales: System, Application, Security, Diagnostics-Performance, TaskScheduler, Escritorio remoto, DNS, DHCP, Defender, SMBClient, WLAN, Sysmon y Setup.</p><span class="api">Get-WinEvent · FilterXPath EventRecordID &gt; último</span></div>
+      <div class="c t2"><h4>Contadores de rendimiento</h4><p>CPU, memoria, paginación, memoria comprometida, cola de CPU, disco con su latencia y red.</p><span class="api">Win32_PerfFormattedData_PerfOS_Memory · _PerfOS_System · _PerfDisk_PhysicalDisk · _Tcpip_NetworkInterface · Win32_OperatingSystem</span></div>
+      <div class="c t2"><h4>Procesos</h4><p>Todos los procesos con su CPU, memoria, E/S, identificadores e hilos; y los que arrancan o terminan, con ruta, línea de comandos y proceso padre.</p><span class="api">Win32_PerfFormattedData_PerfProc_Process · Win32_Process</span></div>
+      <div class="c t3"><h4>Estado e historia del equipo</h4><p>Monitor de confiabilidad, historial de Windows Update, informes de error y volcados, programas de inicio, servicios, disco, energía, seguridad, red y DLL cargadas.</p><span class="api">Win32_ReliabilityRecords · Microsoft.Update.Session · Report.wer y Minidump · llaves Run · Win32_Service · Get-PhysicalDisk · powercfg · Get-MpComputerStatus · Get-NetTCPConnection · netsh wlan</span></div>
+      <div class="c t4"><h4>Inventario</h4><p>Programas instalados con su fecha, parches y controladores: es lo que permite decir desde cuándo está cada componente en la máquina.</p><span class="api">llaves Uninstall (HKLM · WOW6432Node · HKCU) · Get-HotFix · Win32_PnPSignedDriver</span></div>
+    </div>
+  </section>
+
+  <div class="fle"><div class="ln"></div><span class="et">captura-vivo.ps1 · solo lectura · nada sale por la red</span><div class="ln"></div><div class="pt"></div></div>
+
+  <section class="banda">
+    <div class="bh"><span class="n">B</span><h3>Agente · ritmo de cada flujo</h3><span class="d">Las consultas pesadas corren aparte para no frenar la captura</span></div>
+    <div class="cajas">
+      <div class="c t1"><h4>Ciclo principal</h4><p>Lee lo nuevo de cada canal desde el último registro leído. Al arrancar trae la última hora.</p><span class="tic b1">cada 3 s · -Intervalo</span></div>
+      <div class="c t2"><h4>Métricas y procesos</h4><p>En calma escribe menos, y vuelve al ritmo completo ante un pico o si un proceso arranca o termina.</p><span class="tic b2">3 s y 10 s · en calma 30 s</span></div>
+      <div class="c t3"><h4>Segundo plano</h4><p>Las nueve consultas pesadas corren en un hilo propio dentro del mismo proceso; si una tanda pasa de 5 minutos se corta y se anota.</p><span class="tic b3">60 min · red cada 15 s</span></div>
+      <div class="c t4"><h4>Inventario y ficha del agente</h4><p>Al arrancar se envía la ficha del agente: versión, idioma de Windows, permisos, configuración y su propio consumo.</p><span class="tic b4">inventario cada 60 min</span></div>
+    </div>
+  </section>
+
+  <div class="fle"><div class="ln"></div><span class="et">una línea JSON por dato, al final del archivo del día</span><div class="ln"></div><div class="pt"></div></div>
+
+  <section class="banda">
+    <div class="bh"><span class="n">C</span><h3>Carpeta de captura</h3><span class="d">La elige el usuario · por defecto C:\EventosVivo</span></div>
+    <div class="cajas">
+      <div class="c"><h4>vivo-AAAAMMDD.ndjson</h4><p>El archivo del día, que solo crece al final: por eso se puede leer en vivo sin releerlo entero.</p></div>
+      <div class="c"><h4>Días anteriores en gzip</h4><p>Se comprimen solos (unas diez veces menos espacio) y el Analizador los abre tal cual.</p><span class="api">vivo-AAAAMMDD.ndjson.gz</span></div>
+      <div class="c"><h4>Límite de espacio</h4><p>La carpeta no pasa del tope indicado; se borran primero los más antiguos y nunca el día en curso.</p><span class="api">-MaxMB 1024 · -DiasRetencion 7</span></div>
+    </div>
+  </section>
+
+  <h2 class="sec">2 · Entrada al Analizador</h2>
+
+  <section class="banda">
+    <div class="bh"><span class="n">D</span><h3>Exportaciones manuales</h3><span class="d">Camino alterno: sin agente, con lo que ya tengas del equipo</span></div>
+    <div class="cajas">
+      <div class="c t1"><h4>.evtx nativo</h4><p>El binario del Visor de eventos, sin convertir nada.</p><span class="api">Guardar todos los eventos como… · wevtutil epl</span></div>
+      <div class="c t1"><h4>XML · CSV · JSON · texto</h4><p>Exportaciones del Visor, de PowerShell o de otras utilidades, en cualquier combinación.</p><span class="api">wevtutil qe /f:xml · Export-Csv · evtx→json</span></div>
+      <div class="c t1"><h4>Varios archivos a la vez</h4><p>Se combinan y se ordenan en una sola cronología, aunque vengan de equipos distintos.</p></div>
+    </div>
+  </section>
+
+  <div class="frontera"><span class="lbl">frontera del navegador</span><span class="ds"></span></div>
+
+  <section class="banda">
+    <div class="bh"><span class="n">E</span><h3>Tres formas de abrir los datos</h3><span class="d">Lo que cambia es quién entrega los archivos; lo que pasa después es idéntico</span></div>
+    <div class="cajas">
+      <div class="c"><h4>Arrastrar o abrir archivos</h4><p>Funciona en cualquier navegador y desde ClearPass.</p><span class="api">&lt;input type="file"&gt; · arrastrar y soltar</span></div>
+      <div class="c"><h4>Abrir carpeta</h4><p>Carga todos los registros de una carpeta y sus subcarpetas, hasta cuatro niveles.</p><span class="api">showDirectoryPicker() · webkitdirectory</span></div>
+      <div class="c"><h4>En vivo</h4><p>Relee solo lo que creció desde la última vez y vuelve a dibujar respetando filtros y zoom.</p><span class="api">cada 3 s · redibuja cada 4 s</span></div>
+      <div class="c t4"><h4>Dentro del ejecutable</h4><p>El programa abre el diálogo de carpetas de Windows y entrega los archivos; en vivo no hay que elegir carpeta otra vez.</p><span class="api">127.0.0.1 con secreto por sesión · /api/elegir-carpeta · /api/vivo/leer</span></div>
+    </div>
+  </section>
+
+  <h2 class="sec">3 · Dentro del Analizador</h2>
+
+  <section class="banda">
+    <div class="bh"><span class="n">F</span><h3>Lectura y normalización</h3><span class="d">Un solo archivo HTML · todo ocurre en el navegador</span></div>
+    <div class="cajas">
+      <div class="c"><h4>Lectores</h4><p>Binario .evtx, XML, CSV, JSON y NDJSON, texto y .gz. Detecta la codificación y el separador.</p><span class="api">03-lector-evtx · 13-lectores-y-fechas</span></div>
+      <div class="c"><h4>Fechas</h4><p>Español e inglés, día/mes o mes/día fijado por columna, a. m./p. m., ISO. Lo que no se entiende se cuenta, nunca se descarta en silencio.</p><span class="api">13-lectores-y-fechas</span></div>
+      <div class="c"><h4>Modelo común</h4><p>Cada registro se convierte en el mismo tipo de evento; la base de conocimiento le pone título legible, severidad y componente.</p><span class="api">12-normalizar · 11-conocimiento</span></div>
+    </div>
+  </section>
+
+  <div class="fle"><div class="ln"></div><span class="et">cada tipo de línea va a su propio sitio</span><div class="ln"></div><div class="pt"></div></div>
+
+  <section class="banda">
+    <div class="bh"><span class="n">G</span><h3>Lo que queda en memoria</h3><span class="d">De aquí beben todos los módulos de análisis</span></div>
+    <div class="estado">
+      <div class="s t1"><b>S.ev</b><span>eventos ordenados</span></div>
+      <div class="s t2"><b>S.metrics</b><span>muestras del equipo</span></div>
+      <div class="s t2"><b>S.procs</b><span>instantáneas de procesos</span></div>
+      <div class="s t3"><b>S.probes</b><span>última consulta de cada tipo</span></div>
+      <div class="s t4"><b>S.inventory</b><span>programas y parches</span></div>
+      <div class="s t4"><b>S.agents</b><span>ficha del agente</span></div>
+      <div class="s"><b>S.quality</b><span>qué se leyó y qué se perdió</span></div>
+    </div>
+  </section>
+
+  <h2 class="sec">4 · De cada dato a su conclusión</h2>
+  <div class="tw">
+  <table>
+    <thead><tr><th>Línea</th><th>Qué trae</th><th class="m">Cada</th><th class="m">Memoria</th><th>Quién la interpreta</th><th>Dónde se ve</th></tr></thead>
+    <tbody>
+      <tr class="t1"><td class="m">(evento)</td><td>Un registro de Windows con sus datos</td><td class="m">3 s</td><td class="m">S.ev</td><td>Análisis, hallazgos, protocolos, seguimiento, rendimiento, cambios</td><td>Todas las secciones</td></tr>
+      <tr class="t2"><td class="m">metric</td><td>CPU, memoria, disco, red, paginación, cola, los 5 que más consumen y el consumo del propio agente</td><td class="m">3 s<br>30 s en calma</td><td class="m">S.metrics</td><td>Diagnóstico de uso · episodios de saturación</td><td><b>06</b> Rendimiento<br><b>07</b> Recursos</td></tr>
+      <tr class="t2"><td class="m">procs</td><td>Todos los procesos y los que arrancan o terminan, con padre y línea de comandos</td><td class="m">10 s</td><td class="m">S.procs</td><td>Culpable de cada episodio, fugas de memoria, reinicios en bucle</td><td><b>07</b> Recursos</td></tr>
+      <tr class="t3"><td class="m">probe</td><td>Estabilidad, actualizaciones, informes de error, inicio, servicios, disco, energía, seguridad, DLL</td><td class="m">60 min</td><td class="m">S.probes</td><td>Estado del equipo · artefactos y cambios para la causa raíz</td><td><b>01</b> Estado del equipo<br><b>08</b> Causa raíz</td></tr>
+      <tr class="t3"><td class="m">probe · net</td><td>Conexiones por proceso, errores del adaptador, Wi-Fi, DNS</td><td class="m">15 s</td><td class="m">S.probes</td><td>Estado de red</td><td><b>01</b> Estado del equipo</td></tr>
+      <tr class="t4"><td class="m">inventory</td><td>Programas con su fecha de instalación, parches y controladores</td><td class="m">60 min</td><td class="m">S.inventory</td><td>Desde cuándo está el componente · sospechosos</td><td><b>08</b> Causa raíz</td></tr>
+      <tr class="t4"><td class="m">agent</td><td>Versión, idioma de Windows, permisos, configuración y consumo propio</td><td class="m">al arrancar</td><td class="m">S.agents</td><td>Avisos de cobertura: sin administrador, idioma no previsto, agente pesado</td><td><b>01</b> Calidad y cobertura</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="fle"><div class="ln"></div><span class="et">y de ahí salen las conclusiones</span><div class="ln"></div><div class="pt"></div></div>
+
+  <section class="banda">
+    <div class="bh"><span class="n">H</span><h3>Salida</h3><span class="d">Para el ticket, para el equipo y para el hub de la suite</span></div>
+    <div class="cajas">
+      <div class="c"><h4>Diagnóstico en pantalla</h4><p>Las once secciones, con frases concretas y cada tarjeta filtrando la tabla de eventos.</p></div>
+      <div class="c"><h4>netdiag/v1</h4><p>El mismo modelo que la Cronología de Tráfico, con las marcas en UTC: eventos, componentes, sesiones, hallazgos, protocolos, rendimiento, cambios, estado del equipo y recursos.</p><span class="api">JSON</span></div>
+      <div class="c"><h4>CSV</h4><p>Todos los eventos o solo la vista filtrada, un evento por fila.</p></div>
+    </div>
+  </section>
+
+  <h2 class="sec">5 · Flujo de las fuentes del propio desarrollo</h2>
+  <section class="banda">
+    <div class="bh"><span class="n">I</span><h3>De las fuentes al artefacto</h3><span class="d">Nada se edita en el HTML generado: se cambia la fuente y se vuelve a compilar</span></div>
+    <div class="cajas cinco">
+      <div class="c"><h4>fuentes/</h4><p>Cabecera y estilos, cuerpo de las secciones, lector .evtx y 20 módulos en <code>app/NN-*.js</code>, que se concatenan en orden.</p></div>
+      <div class="c"><h4>construir.mjs</h4><p>Valida nombres y orden y escribe el archivo único.</p><span class="api">node construir.mjs [--comprobar]</span></div>
+      <div class="c"><h4>eventos-windows.html</h4><p>El artefacto que se publica en ClearPass o se abre suelto.</p></div>
+      <div class="c"><h4>Ejecutable/</h4><p>Empaqueta el HTML, el agente y sus pruebas dentro del .exe de Windows.</p><span class="api">node construir-exe.mjs</span></div>
+      <div class="c"><h4>Verificación/</h4><p>420 comprobaciones sobre 14 escenarios, por módulo si hace falta, y 39 del agente.</p><span class="api">node verificacion.js [--modulo X] · pruebas-agente.ps1</span></div>
+    </div>
+  </section>
+
+  <div class="nota">Lo que no cruza ninguna frontera: el Analizador no hace ninguna petición a internet y el agente no envía nada por la red. Dentro del ejecutable, el servidor local escucha solo en 127.0.0.1, exige un secreto distinto en cada sesión y solo entrega archivos de la carpeta que el usuario eligió.</div>
+
+  <footer><span>Desarrollado por Damecas</span><span class="mono">Analizador de Eventos de Windows · documentación del flujo de datos</span></footer>
+</div>
+</body>
+</html>
